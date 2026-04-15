@@ -1,16 +1,4 @@
-# Полный код игры с описанием каждого метода
-
-## Структура документа
-1. [config/config.py - Настройки игры](#configconfigpy)
-2. [game/player.py - Класс игрока](#gameplayerpy)
-3. [game/enemy.py - Класс врага](#gameenemypy)
-4. [game/bullet.py - Класс пули](#gamebulletpy)
-5. [game/weapon.py - Класс оружия](#gameweaponpy)
-6. [game/game.py - Главный класс игры](#gamegamepy)
-7. [ui/panel.py - Базовая панель](#uipanelpy)
-8. [ui/button.py - Кнопка](#uibuttonpy)
-9. [ui/menu.py - Меню](#uimenupy)
-10. [main.py - Точка входа](#mainpy)
+# Полный код модификации со спрайтами и звуками
 
 ---
 
