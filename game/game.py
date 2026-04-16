@@ -1,178 +1,49 @@
-"""The main class of the application"""
-
+# game/enemy.py
 import pygame
 import random
 from config.config import *
-from game.player import Player
-from game.enemy import Enemy
-from game.weapon import Weapon
-from ui.menu import MenuPanel
-from ui.panel import Panel
-from ui.button import Button
 
 
-class Game:
-    def __init__(self):
-        pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.clock = pygame.time.Clock()
-        self.is_running = True
-        self.state = STATE_MENU
-        self.font = pygame.font.Font(None, 36)
+class Enemy:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.size = 40
+        self.color = (255, 0, 0)  # Красный
+        self.speed = 2
+        self.hp = 2
 
-        # Игровые объекты
-        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-        self.weapon = Weapon(self.player.x + 25, self.player.y + 25)
-        self.enemies = []
+        self.max_hp = 2
 
-        # Таймер для спавна врагов
-        self.enemy_spawn_timer = 0
-        self.score = 0
+        self.image = None
+        self.load_image()
 
-        # UI элементы
-        self.top_panel = Panel(0, 0, SCREEN_WIDTH, 50, GRAY)
-        menu_btn = Button(SCREEN_WIDTH - 100, 5, 90, 40, "MENU", BLUE, (100, 150, 255))
-        self.top_panel.add_button(menu_btn)
+    def load_image(self):
+        self.image = pygame.image.load("assets/images/enemy.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
-        self.menu_panel = MenuPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
+    def move_to_player(self, player_x, player_y):
+        """Движется к игроку"""
+        if self.x < player_x:
+            self.x += self.speed
+        elif self.x > player_x:
+            self.x -= self.speed
 
-    def handle_events(self):
-        events = pygame.event.get()
+        if self.y < player_y:
+            self.y += self.speed
+        elif self.y > player_y:
+            self.y -= self.speed
 
-        # ВАЖНО: отдельно обрабатываем события для стрельбы
-        for event in events:
-            if event.type == pygame.QUIT:
-                self.is_running = False
+    def hit(self):
+        """Попадание по врагу"""
+        self.hp -= 1
+        return self.hp <= 0  # True если умер
 
-            # Стрельба в игре
-            if self.state == STATE_GAME and event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Левая кнопка
-                    mouse_x, mouse_y = pygame.mouse.get_pos()
-                    self.weapon.shoot(mouse_x, mouse_y)
+    def draw(self, screen):
+        screen.blit(self.image, (self.x, self.y))
 
-        # Обработка UI
-        res = self.top_panel.handle_events(events)
-        if res == "MENU":
-            self.state = STATE_MENU
-
-        if self.state == STATE_MENU:
-            res = self.menu_panel.handle_events(events)
-            if res == "START":
-                self.reset_game()
-                self.state = STATE_GAME
-
-    def reset_game(self):
-        """Сброс игры"""
-        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-        self.weapon = Weapon(self.player.x + 25, self.player.y + 25)
-        self.enemies = []
-        self.score = 0
-        self.enemy_spawn_timer = 0
-
-    def spawn_enemy(self):
-        """Создает врага на краю экрана"""
-        side = random.randint(0, 3)
-
-        if side == 0:  # Лево
-            x = -50
-            y = random.randint(0, SCREEN_HEIGHT)
-        elif side == 1:  # Право
-            x = SCREEN_WIDTH + 50
-            y = random.randint(0, SCREEN_HEIGHT)
-        elif side == 2:  # Верх
-            x = random.randint(0, SCREEN_WIDTH)
-            y = -50
-        else:  # Низ
-            x = random.randint(0, SCREEN_WIDTH)
-            y = SCREEN_HEIGHT + 50
-
-        enemy = Enemy(x, y)
-        self.enemies.append(enemy)
-
-    def check_collisions(self):
-        """Проверяет попадания пуль во врагов"""
-        for bullet in self.weapon.bullets[:]:  # Проходим по копии
-            bullet_rect = pygame.Rect(bullet.x, bullet.y, bullet.size, bullet.size)
-
-            for enemy in self.enemies[:]:
-                enemy_rect = pygame.Rect(enemy.x, enemy.y, enemy.size, enemy.size)
-
-                if bullet_rect.colliderect(enemy_rect):
-                    # Попадание!
-                    if bullet in self.weapon.bullets:
-                        self.weapon.bullets.remove(bullet)
-
-                    if enemy.hit():
-                        if enemy in self.enemies:
-                            self.enemies.remove(enemy)
-                            self.score += 1
-                    break
-
-    def draw(self):
-        if self.state == STATE_MENU:
-            self.menu_panel.draw(self.screen, self.font)
-        else:
-            self.screen.fill(BLACK)
-
-            # Рисуем игрока
-            self.player.draw(self.screen)
-
-            # Рисуем врагов
-            for enemy in self.enemies:
-                enemy.draw(self.screen)
-
-            # Рисуем оружие (пули)
-            self.weapon.draw(self.screen)
-
-            # Рисуем счет
-            score_text = self.font.render(f"Score: {self.score}", True, WHITE)
-            self.screen.blit(score_text, (10, 10))
-
-            # Отладка: показываем количество пуль
-            bullets_text = self.font.render(f"Bullets: {len(self.weapon.bullets)}", True, WHITE)
-            self.screen.blit(bullets_text, (10, 50))
-
-        self.top_panel.draw(self.screen, self.font)
-        pygame.display.flip()
-
-    def update(self):
-        if self.state == STATE_GAME:
-            # Движение игрока
-            keys = pygame.key.get_pressed()
-            self.player.move(keys)
-
-            # Обновляем позицию оружия (центр игрока)
-            self.weapon.update_position(self.player.x + 25, self.player.y + 25)
-
-            # Обновляем пули
-            self.weapon.update()
-
-            # Движение врагов к игроку
-            player_center_x = self.player.x + 25
-            player_center_y = self.player.y + 25
-
-            for enemy in self.enemies:
-                enemy.move_to_player(player_center_x, player_center_y)
-
-            # Спавн врагов
-            self.enemy_spawn_timer += 1
-            if self.enemy_spawn_timer > 60:  # Каждую секунду
-                self.spawn_enemy()
-                self.enemy_spawn_timer = 0
-
-            # Проверяем попадания
-            self.check_collisions()
-
-            # Проверяем столкновение игрока с врагом
-            player_rect = pygame.Rect(self.player.x, self.player.y, 50, 50)
-            for enemy in self.enemies:
-                enemy_rect = pygame.Rect(enemy.x, enemy.y, enemy.size, enemy.size)
-                if player_rect.colliderect(enemy_rect):
-                    self.state = STATE_MENU
-
-    def run(self):
-        while self.is_running:
-            self.handle_events()
-            self.update()
-            self.draw()
-            self.clock.tick(FPS)
+        bar_width = self.size
+        bar_height = 5
+        health_percentage = self.hp / self.max_hp
+        pygame.draw.rect(screen, RED, (self.x, self.y - 10, bar_width, bar_height))
+        pygame.draw.rect(screen, GREEN, (self.x, self.y - 10, bar_width * health_percentage, bar_height))
