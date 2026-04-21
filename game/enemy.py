@@ -1,6 +1,7 @@
 # game/enemy.py
 import pygame
 import random
+from config.config import *
 
 
 class Enemy:
@@ -9,8 +10,34 @@ class Enemy:
         self.y = y
         self.size = 40
         self.color = (255, 0, 0)  # Красный
+
+        self.type = None
+
         self.speed = 2
         self.hp = 2
+        self.damage = 1
+        self.max_hp = 2
+
+        self.image = None
+
+        self.load_image()
+        self.init_stat()
+
+    def init_stat(self):
+        key = random.choice(list(enemy_types.keys()))
+        self.type = key
+        if self.type == 1:
+            self.speed = 4
+        elif self.type == 2:
+            self.damage = 3
+        elif self.type == 3:
+            self.max_hp = 5
+            self.hp = 5
+
+    def load_image(self):
+        key = random.choice(list(images.keys()))
+        self.image = pygame.image.load(images[key]).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
     def move_to_player(self, player_x, player_y):
         """Движется к игроку"""
@@ -30,4 +57,10 @@ class Enemy:
         return self.hp <= 0  # True если умер
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, (self.x, self.y, self.size, self.size))
+        screen.blit(self.image, (self.x, self.y))
+
+        bar_width = self.size
+        bar_height = 5
+        health_percentage = self.hp / self.max_hp
+        pygame.draw.rect(screen, RED, (self.x, self.y - 10, bar_width, bar_height))
+        pygame.draw.rect(screen, GREEN, (self.x, self.y - 10, bar_width * health_percentage, bar_height))
