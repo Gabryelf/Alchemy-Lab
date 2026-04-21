@@ -134,15 +134,12 @@ class Game:
             # Рисуем оружие (пули)
             self.weapon.draw(self.screen)
 
-            score_text = self.font.render(f"Score: {self.score}", True, WHITE)
-            self.screen.blit(score_text, (30, 22))
-
-            hp_text = self.font.render(f"HP: {self.player.hp}", True, RED)
-            self.screen.blit(hp_text, (170, 22))
-
-
-
         self.top_panel.draw(self.screen, self.font)
+        score_text = self.font.render(f"Score: {self.score}", True, WHITE)
+        self.screen.blit(score_text, (30, 22))
+
+        hp_text = self.font.render(f"HP: {self.player.hp}", True, RED)
+        self.screen.blit(hp_text, (170, 22))
         pygame.display.flip()
 
     def update(self):
@@ -176,10 +173,11 @@ class Game:
             # Проверяем столкновение игрока с врагом
             player_rect = pygame.Rect(self.player.x, self.player.y, 50, 50)
             for enemy in self.enemies:
+                damage = enemy.damage
                 enemy_rect = pygame.Rect(enemy.x, enemy.y, enemy.size, enemy.size)
                 if player_rect.colliderect(enemy_rect):
                     if self.player.is_alive():
-                        self.player.take_damage()
+                        self.player.take_damage(damage)
                     else:
                         self.state = STATE_MENU
 
